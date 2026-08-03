@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>2026国考 · 备考小窝</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#F6F3FF; --card:#FFFFFF; --ink:#4A4368; --ink2:#8B85A8;
+      --pink:#F9A8D4; --purple:#A78BFA; --blue:#7DD3FC; --shadow:0 8px 24px rgba(140,120,200,.15);
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+    html,body{margin:0;padding:0;}
+    body{
+      font-family:'Nunito','Noto Sans SC',-apple-system,'PingFang SC',sans-serif;
+      background:#ECE6FA; color:var(--ink);
+      display:flex; justify-content:center;
+    }
+    #phone{
+      width:100%; max-width:430px; min-height:100vh; background:var(--bg);
+      position:relative; overflow:hidden;
+      background-image:
+        radial-gradient(circle at 12% 8%, rgba(249,168,212,.25), transparent 40%),
+        radial-gradient(circle at 88% 4%, rgba(125,211,252,.25), transparent 42%),
+        radial-gradient(circle at 50% 96%, rgba(167,139,250,.18), transparent 50%);
+    }
+    .screen{ padding:18px 18px 96px; min-height:100vh; }
+    .topbar{
+      position:sticky; top:0; z-index:20; background:rgba(246,243,255,.85);
+      backdrop-filter:blur(12px); padding:14px 18px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .topbar h1{ font-size:19px; font-weight:800; margin:0; }
+    .back-btn{
+      width:38px;height:38px;border-radius:14px;background:#fff;border:none;
+      box-shadow:var(--shadow); font-size:18px; cursor:pointer; display:flex;align-items:center;justify-content:center;
+      color:var(--ink);
+    }
+    .tabbar{
+      position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+      width:100%; max-width:430px; background:rgba(255,255,255,.92);
+      backdrop-filter:blur(16px); border-top:1px solid rgba(167,139,250,.12);
+      display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+      z-index:30; box-shadow:0 -6px 20px rgba(140,120,200,.1);
+    }
+    .tab{
+      flex:1; border:none; background:none; cursor:pointer; padding:6px 0;
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+      color:var(--ink2); font-size:11px; font-weight:700; border-radius:14px;
+      transition:.2s;
+    }
+    .tab .ic{ font-size:21px; transition:.2s; }
+    .tab.active{ color:var(--purple); }
+    .tab.active .ic{ transform:scale(1.18) translateY(-1px); }
+    .card{ background:var(--card); border-radius:24px; box-shadow:var(--shadow); padding:18px; }
+    .pill{ display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700; }
+    .btn-tap{ transition:transform .12s, box-shadow .2s; cursor:pointer; }
+    .btn-tap:active{ transform:scale(.96); }
+    .phase-card{ border-radius:22px; padding:16px; box-shadow:var(--shadow); cursor:pointer; transition:transform .15s; position:relative; overflow:hidden; }
+    .phase-card:active{ transform:scale(.97); }
+    .ring{ border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .task-row{ display:flex; align-items:flex-start; gap:12px; padding:13px 14px; border-radius:16px; background:#F8F6FF; margin-bottom:9px; cursor:pointer; transition:.15s; }
+    .task-row:active{ background:#F0EBFF; }
+    .check{ width:24px;height:24px;border-radius:9px;border:2.5px solid #D9D2F0; flex-shrink:0; margin-top:1px; display:flex;align-items:center;justify-content:center; font-size:14px; color:#fff; transition:.2s; }
+    .check.on{ background:var(--purple); border-color:var(--purple); }
+    .bar{ height:10px; border-radius:999px; background:#EDE7FB; overflow:hidden; }
+    .bar > i{ display:block; height:100%; border-radius:999px; }
+    .fade{ animation:fade .3s ease; }
+    @keyframes fade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+    .emoji-badge{ width:46px;height:46px;border-radius:15px; display:flex;align-items:center;justify-content:center; font-size:24px; }
+    .day-dot{ width:30px;height:30px;border-radius:10px; display:flex;align-items:center;justify-content:center; font-size:12px; font-weight:700; }
+  </style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#a855f7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+  <div id="phone">
+    <div id="topbar" class="topbar"></div>
+    <div id="screen" class="screen"></div>
+    <nav id="tabbar" class="tabbar"></nav>
+  </div>
+
+  <script>
+    // ============ 配置 ============
+    const examDate = new Date('2026-11-29T09:00:00');
+    const DAY_MS = 86400000;
+    const DEFAULT_HABITS = ['速算/手感练习 15分钟','时政阅读 10分钟（半月谈/人民日报）','整理今日错题','保证 7 小时睡眠'];
+    const ESSAY_HABITS = ['手写申论小题 1 道（答题卡）','申论素材/范文背诵 20分钟','时政阅读 10分钟','整理今日错题','保证 7 小时睡眠'];
+    const SPRINT_HABITS = ['复盘当日套卷错题','时政最后扫一遍','调整作息（早睡）'];
+
+    const THEME = {
+      sky:    {e:'📊', c1:'#7DD3FC', c2:'#38BDF8', soft:'#E0F2FE'},
+      indigo: {e:'🧩', c1:'#C4B5FD', c2:'#A78BFA', soft:'#EDE9FE'},
+      emerald:{e:'💬', c1:'#6EE7B7', c2:'#34D399', soft:'#D1FAE5'},
+      amber:  {e:'🔢', c1:'#FCD34D', c2:'#FBBF24', soft:'#FEF3C7'},
+      rose:   {e:'🏛️', c1:'#F9A8D4', c2:'#F472B6', soft:'#FCE7F3'},
+      violet: {e:'✍️', c1:'#A78BFA', c2:'#8B5CF6', soft:'#EDE9FE'},
+      cyan:   {e:'⏱️', c1:'#67E8F9', c2:'#22D3EE', soft:'#CFFAFE'}
+    };
+
+    const phases = [
+      { id:'data', name:'资料分析', color:'sky', start:'2026-08-02', end:'2026-08-29', weeks:4, habits:DEFAULT_HABITS,
+        slogan:'行测拿分大户，先拿下最稳模块',
+        weeklyPlans:[
+          {title:'第1周 · 理论打底', tasks:['资料分析总论：统计术语（基期/现期/增长率/增长量）','文字材料阅读技巧 + 教材练习','表格材料速读 + 教材练习','图形材料（柱/折/饼）识别 + 练习','综合材料 + 教材综合训练','本周错题复盘 + 理论笔记整理','基础限时摸底：4篇/40分钟']},
+          {title:'第2周 · 速算突破', tasks:['尾数法 + 首数法（高照速算课）','特征数字法（分数↔百分数）','分数大小比较技巧','乘除法转化速算','综合速算训练（跟着高照练速算）','夸夸刷 第1组（计时）','夸夸刷 第2组 + 速算错题复盘']},
+          {title:'第3周 · 题型专项', tasks:['简单计算 & 直接读数题','增长率相关题型','增长量相关题型','比重相关题型','平均数与倍数题型','综合分析与判断题','本周600题错题二刷']},
+          {title:'第4周 · 限时提速', tasks:['高照超大杯：套题提速方法论','限时4篇 / 30分钟','限时4篇 / 28分钟','限时4篇 / 25分钟','混合材料限时强化','全真模拟1套（仅资料分析）','阶段达标：25分钟内正确率≥90%']}
+        ],
+        resources:{网课:['高照3+2理论课','夸夸刷对应课程','超大杯对应课程'],教材:['高照3+2'],刷题:['高照夸夸刷','花生1200题','高照超大杯','花生十三600题','跟着高照练速算']}},
+      { id:'reasoning', name:'判断推理', color:'indigo', start:'2026-08-30', end:'2026-09-26', weeks:4, habits:DEFAULT_HABITS,
+        slogan:'逻辑+类比+图推，分块突破',
+        weeklyPlans:[
+          {title:'第1周 · 逻辑-翻译推理', tasks:['翻译推理：假言命题推理规则','翻译推理：联言/选言命题','真假推理：矛盾关系秒杀','分析推理：排除法与代入法','花生课程对应章节 + 教材练习','逻辑判断专项（花生十三600题 前半）','本周错题复盘']},
+          {title:'第2周 · 逻辑-论证', tasks:['论证结构识别：论点/论据/论证方式','加强题型解题套路','削弱题型解题套路','归纳推理与原因解释','逻辑600题 后半 + 限时','逻辑模块全真模拟','本周错题二刷']},
+          {title:'第3周 · 图推', tasks:['位置规律（平移/旋转/翻转）','样式规律（遍历/加减同异/黑白运算）','属性规律（对称/曲直/封闭）','数量规律（点线角面素）','空间重构（六面体折纸盒）','龙飞600题 + 刘义恒700题选做','图推错题复盘 + 每日20题']},
+          {title:'第4周 · 类比+定义', tasks:['类比：语义关系（近义/反义/象征）','类比：逻辑关系（包容/并列/对应）','类比：语法关系与二级辨析','定义判断：核心成分分析法','聂佳定义300 + 类比推理100','类比+定义混合限时训练','判断推理模块全真模拟']}
+        ],
+        resources:{网课:['逻辑花生课程','类比聂佳课程','图推龙飞课程'],逻辑判断:['花生十三判断推理600题'],定义和类比:['聂佳定义300+类比推理100'],图推:['龙飞600题','刘义恒700题']}},
+      { id:'language', name:'言语理解', color:'emerald', start:'2026-09-27', end:'2026-10-17', weeks:3, habits:DEFAULT_HABITS,
+        slogan:'技巧打底，积累为王',
+        weeklyPlans:[
+          {title:'第1周 · 理论+逻辑填空', tasks:['郭熙言语理论课：考情与解题框架','逻辑填空：语境分析（解释/反对/递进）','逻辑填空：词语辨析（语义/感情色彩）','实词填空专项训练','成语填空 + 花生高频成语1000个（每日背50）','郭熙100题 填空部分','本周错题复盘']},
+          {title:'第2周 · 片段阅读', tasks:['主旨概括题：找重点（关联词/行文）','意图判断与标题填入','细节理解题：陷阱识别','语句排序题技巧','语句填空与下文推断','花生十三片段阅读600题 前半','本周错题二刷']},
+          {title:'第3周 · 综合提升', tasks:['郭熙三合一100题','红领巾刷题（套题化训练）','齐麟刷题组（配合欣雨言语公众号）','高频成语1000个 二轮复习','片段+填空混合限时（30分钟/40题）','言语模块全真模拟','阶段总结 + 易错词本整理']}
+        ],
+        resources:{网课:['郭熙言语理论课','郭熙100题对应课程'],教材:['花生十三高频成语1000个'],刷题:['郭熙三合一100题','红领巾','花生十三片段阅读600题','齐麟刷题组']}},
+      { id:'quantity', name:'数量关系', color:'amber', start:'2026-10-18', end:'2026-10-31', weeks:2, habits:DEFAULT_HABITS,
+        slogan:'选调必学，国考抓基础题型',
+        weeklyPlans:[
+          {title:'第1周 · 基础题型', tasks:['高照稳稳班：工程问题（赋值法）','行程问题（相遇/追及/流水）','经济利润问题（利润/折扣/统筹）','容斥原理与排列组合基础','概率问题基础','几何问题（周长/面积/体积）','本周基础题型复盘 + 教材练习']},
+          {title:'第2周 · 提升+花生', tasks:['花生数量课：高频秒杀技巧','高照数量超大杯','花生十三数量600题 前半','花生十三数量600题 后半','数字推理（省考可能涉及）','数量模块限时训练（10分钟挑3-5题）','阶段总结：确定必做题型清单']}
+        ],
+        resources:{网课:['高照稳稳班','高照超大杯对应课程','花生数量课'],刷题:['高照数量超大杯','花生十三数量600题']}},
+      { id:'politics', name:'政治理论/常识', color:'rose', start:'2026-11-01', end:'2026-11-07', weeks:1, habits:DEFAULT_HABITS,
+        slogan:'性价比高，短期集中突破',
+        weeklyPlans:[
+          {title:'第1周 · 专项+时政', tasks:['上岸村小黑：政治理论框架（马原/毛中特）','李梦娇政治理论专项班：时政热点串讲','小黑政治理论常识判断 教材 上半','小黑政治理论常识判断 教材 下半','近一年重要会议/文件/法律整理','半月谈时政月度热点过一遍','常识判断限时模拟 + 错题复盘']}
+        ],
+        resources:{网课:['上岸村小黑','李梦娇政治理论专项班'],教材:['小黑政治理论常识判断']}},
+      { id:'essay', name:'申论', color:'violet', start:'2026-11-08', end:'2026-11-21', weeks:2, habits:ESSAY_HABITS,
+        slogan:'务必刷地区真题，手写答题卡',
+        weeklyPlans:[
+          {title:'第1周 · 小题基本功', tasks:['白鹭60天：归纳概括题方法','综合分析题（解释/评价/比较）','提出对策题','贯彻执行题（公文写作格式）','粉笔申论100 小题部分','白鹭申论100 小题部分','本周小题错题复盘（对照参考答案）']},
+          {title:'第2周 · 大作文+套题', tasks:['袁东基础课：大作文审题与立意','大作文结构（开头/分论/结尾）模板','白鹭60天补充：大作文素材与论证','小马哥刷题申论 套题','地区真题手写（答题卡）1套','地区真题手写 2套 + 自评','整理个人申论素材本 + 阶段总结']}
+        ],
+        resources:{网课:['袁东基础课（大作文）','白鹭60天申论课','25年60天补充'],教材:['答题卡'],刷题:['粉笔申论100','白鹭申论100','小马哥刷题申论','地区真题']}},
+      { id:'sprint', name:'套卷冲刺', color:'cyan', start:'2026-11-22', end:'2026-11-29', weeks:1, habits:SPRINT_HABITS,
+        slogan:'全真模拟，调整到考试节奏',
+        weeklyPlans:[
+          {title:'第1周 · 全真模拟', tasks:['行测真题套卷1（严格计时120分钟）','申论真题套卷1（手写答题卡）','行测真题套卷2','申论真题套卷2','错题总复盘 + 薄弱点回看','调整作息至考试时间（上午行测/下午申论）','考前准备：准考证/身份证/文具清单核对']}
+        ],
+        resources:{套卷:['国考/省考真题套卷（必买）']}}
+    ];
+
+    // ============ 工具 ============
+    const parseDate = s => new Date(s+'T00:00:00');
+    const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+    const fmtMD = s => { const d=parseDate(s); return `${d.getMonth()+1}月${d.getDate()}日`; };
+    const fmtFull = s => { const d=parseDate(s); const w=['日','一','二','三','四','五','六'][d.getDay()]; return `${d.getMonth()+1}月${d.getDate()}日 周${w}`; };
+
+    function getDayInfo(dateStr){
+      const d=parseDate(dateStr);
+      for(const p of phases){
+        const s=parseDate(p.start), e=parseDate(p.end);
+        if(d>=s && d<=e){
+          const off=Math.floor((d-s)/DAY_MS);
+          const wi=Math.min(Math.floor(off/7), p.weeklyPlans.length-1);
+          const di=off%7;
+          const plan=p.weeklyPlans[wi];
+          return {phase:p, wi, di, plan, core:plan.tasks[Math.min(di,plan.tasks.length-1)]};
+        }
+      }
+      return null;
+    }
+    function getDailyTasks(ds){
+      const info=getDayInfo(ds);
+      const habits=info?(info.phase.habits||DEFAULT_HABITS):['列出资料采购清单','制定作息时间表','加入学习打卡群'];
+      return [info?info.core:'准备：整理资料、制定每日时间表', ...habits];
+    }
+    function loadDay(ds){ try{ return new Set(JSON.parse(localStorage.getItem('gw_'+ds)||'[]')); }catch(e){ return new Set(); } }
+    function saveDay(ds,set){ localStorage.setItem('gw_'+ds, JSON.stringify(Array.from(set))); touch('gw_'+ds); }
+    function addDays(start,i){ const d=parseDate(start); d.setDate(d.getDate()+i); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+    function safeParse(k,def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def; }catch(e){ return def; } }
+
+    // ============ 计时器 ============
+    let timerState = null;
+    function ensureTimer(){
+      const day = todayStr();
+      if(!timerState || timerState.day !== day){
+        const raw = safeParse('gw_timer_'+day, null);
+        timerState = (raw && raw.day===day) ? raw : {day, accum:0, running:false, startTs:0};
+      }
+    }
+    function timerSeconds(){
+      ensureTimer();
+      if(timerState.running && timerState.startTs) return timerState.accum + (Date.now()-timerState.startTs)/1000;
+      return timerState.accum;
+    }
+    function saveTimer(){ ensureTimer(); localStorage.setItem('gw_timer_'+todayStr(), JSON.stringify(timerState)); touch('gw_timer_'+todayStr()); }
+    function startTimer(){
+      ensureTimer();
+      if(!timerState.running){
+        timerState.running=true; timerState.startTs=Date.now();
+        saveTimer(); tickTimer();
+      }
+    }
+    function pauseTimer(){
+      ensureTimer();
+      if(timerState.running){
+        timerState.accum = timerSeconds();
+        timerState.running=false; timerState.startTs=0;
+        saveTimer(); tickTimer();
+      }
+    }
+    function toggleTimer(){ timerState && timerState.running ? pauseTimer() : startTimer(); }
+    function resetTimer(){
+      ensureTimer();
+      timerState = {day:todayStr(), accum:0, running:false, startTs:0};
+      saveTimer(); tickTimer();
+    }
+    function fmtClock(sec){
+      sec=Math.floor(sec);
+      const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+      const p=n=>String(n).padStart(2,'0');
+      return `${p(h)}:${p(m)}:${p(s)}`;
+    }
+    function tickTimer(){
+      const disp=document.getElementById('timer-display');
+      const h=document.getElementById('today-hours');
+      const btn=document.getElementById('timer-toggle');
+      const sec=timerSeconds();
+      if(disp) disp.textContent=fmtClock(sec);
+      if(h) h.textContent=(sec/3600).toFixed(1);
+      if(btn) btn.textContent = (timerState && timerState.running) ? '⏸ 暂停' : '▶ 开始';
+    }
+    let saveTick=0;
+    setInterval(()=>{
+      tickTimer();
+      if(++saveTick%5===0 && timerState && timerState.running) saveTimer();
+    }, 1000);
+
+    // 某天学习小时数（用于日历）
+    function studyHours(ds){
+      const o=safeParse('gw_timer_'+ds, null);
+      if(!o) return 0;
+      let sec=o.accum||0;
+      if(o.running && o.startTs) sec += (Date.now()-o.startTs)/1000;
+      return sec/3600;
+    }
+    function hourColor(h){
+      if(h<=0) return '#EDE7FB';
+      if(h<1) return '#E9D5FF';
+      if(h<2) return '#C4B5FD';
+      if(h<3) return '#A78BFA';
+      return '#8B5CF6';
+    }
+
+    function ringSVG(pct, c1, c2, size){
+      const r=(size-14)/2, c=2*Math.PI*r, off=c*(1-pct/100);
+      const gid='g'+c1.replace('#','');
+      return `<svg width="${size}" height="${size}" style="transform:rotate(-90deg)">
+        <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
+        <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#EDE7FB" stroke-width="11"/>
+        <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="url(#${gid})" stroke-width="11"
+          stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/>
+        <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" transform="rotate(90 ${size/2} ${size/2})"
+          font-size="${size*0.26}" font-weight="800" fill="#4A4368" font-family="Nunito">${pct}%</text>
+      </svg>`;
+    }
+
+    // ============ 路由 ============
+    let stack = [{type:'home'}];
+    function go(node){ stack.push(node); render(); }
+    function back(){ if(stack.length>1){ stack.pop(); render(); } }
+    function setTab(t){ stack=[{type:'tab', tab:t}]; render(); }
+
+    function render(){
+      const top = document.getElementById('topbar');
+      const screen = document.getElementById('screen');
+      const node = stack[stack.length-1];
+      screen.classList.remove('fade'); void screen.offsetWidth; screen.classList.add('fade');
+      if(node.type==='home' || node.type==='tab'){ top.innerHTML = `<h1>🐾 备考小窝</h1>`; }
+      else { top.innerHTML = `<button class="back-btn" onclick="back()">←</button><h1>${node.title||''}</h1>`; }
+      renderTabbar(node);
+
+      if(node.type==='home') screen.innerHTML = viewHome();
+      else if(node.type==='tab'){
+        if(node.tab==='plan') screen.innerHTML = viewPlan();
+        else if(node.tab==='book') screen.innerHTML = viewBook();
+        else if(node.tab==='me') screen.innerHTML = viewMe();
+      }
+      else if(node.type==='phase') screen.innerHTML = viewPhase(node);
+      else if(node.type==='week') screen.innerHTML = viewWeek(node);
+      else if(node.type==='day') screen.innerHTML = viewDay(node);
+      else if(node.type==='res') screen.innerHTML = viewRes(node);
+      window.scrollTo(0,0);
+      tickTimer();
+    }
+
+    function renderTabbar(node){
+      const t = node.type==='tab' ? node.tab : 'home';
+      const tabs = [['home','🏠','首页'],['plan','🗺️','计划'],['book','📚','资料'],['me','👤','我的']];
+      document.getElementById('tabbar').innerHTML = tabs.map(([id,ic,lb])=>{
+        const active = t===id ? 'active':'';
+        return `<button class="tab ${active}" onclick="setTab('${id}')"><span class="ic">${ic}</span>${lb}</button>`;
+      }).join('');
+    }
+
+    // ============ 视图：首页 ============
+    function currentPhase(){
+      const today = todayStr();
+      for(const p of phases){ if(today>=p.start && today<=p.end) return p; }
+      return today < phases[0].start ? phases[0] : phases[phases.length-1];
+    }
+    function viewHome(){
+      const today = todayStr();
+      const info = getDayInfo(today);
+      const tasks = getDailyTasks(today);
+      const done = loadDay(today).size;
+      const pct = Math.round(done/tasks.length*100);
+      const cp = currentPhase();
+      const th = THEME[cp.color];
+      const diff = Math.max(0, Math.ceil((examDate-new Date())/DAY_MS));
+      const meta = info ? `${info.phase.name} · ${info.plan.title}` : '准备阶段';
+      const running = timerState && timerState.running;
+
+      return `
+      <div class="card fade" style="background:linear-gradient(135deg,${th.c1},${th.c2});color:#fff;margin-bottom:14px;">
+        <div style="font-size:13px;opacity:.9">距离国考笔试还有</div>
+        <div style="font-size:46px;font-weight:800;line-height:1.1;margin:2px 0"><span id="countdown-display">${diff}</span><span style="font-size:18px;font-weight:700"> 天</span></div>
+        <div style="font-size:12px;opacity:.85">预计 2026.11.29 · 只此一事</div>
+      </div>
+
+      <div class="card fade" style="text-align:center;margin-bottom:14px;background:linear-gradient(135deg,${th.c1}1f,${th.c2}1f)">
+        <div style="font-size:13px;color:var(--ink2);font-weight:700;margin-bottom:6px">⏱️ 学习计时</div>
+        <div id="timer-display" style="font-size:42px;font-weight:800;font-variant-numeric:tabular-nums;color:${th.c2};letter-spacing:1px">00:00:00</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+          <button id="timer-toggle" onclick="toggleTimer()" class="btn-tap" style="border:none;font-family:inherit;font-weight:800;font-size:15px;padding:11px 26px;border-radius:16px;color:#fff;background:linear-gradient(135deg,#A78BFA,#F9A8D4);box-shadow:var(--shadow)">▶ 开始</button>
+          <button onclick="resetTimer()" class="btn-tap" style="border:none;font-family:inherit;font-weight:700;font-size:14px;padding:11px 18px;border-radius:16px;color:var(--ink2);background:#fff;box-shadow:var(--shadow)">↺ 重置</button>
+        </div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:9px">今日已累计 <span id="today-hours" style="font-weight:800;color:#8B5CF6">0.0</span> 小时</div>
+      </div>
+
+      <div onclick="go({type:'day',date:'${today}',title:'${fmtFull(today)}'})" class="card btn-tap fade" style="margin-bottom:14px;display:flex;align-items:center;gap:14px;">
+        <div class="emoji-badge" style="background:${th.soft}">${th.e}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--ink2);font-weight:700">今日聚焦 · ${meta}</div>
+          <div style="font-size:15px;font-weight:800;margin-top:2px">${info?info.core:'制定计划，准备出发'}</div>
+          <div style="font-size:12px;color:var(--purple);font-weight:700;margin-top:4px">已完成 ${done}/${tasks.length} 项 →</div>
+        </div>
+      </div>
+
+      <div class="card fade" style="margin-bottom:14px;background:linear-gradient(135deg,#FEF3C7,#FDE68A);text-align:left">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-weight:800;font-size:14px;color:#92400E">📝 今日便签</div>
+          <div class="btn-tap" style="font-size:11px;color:#B45309;font-weight:700" onclick="go({type:'day',date:'${today}',title:'${fmtFull(today)}'})">看全部 →</div>
+        </div>
+        <textarea oninput="saveNote('${today}',this.value)" placeholder="随手记：今天学了啥、卡在哪、明天干啥" style="width:100%;box-sizing:border-box;border:none;background:#FFFDF5;border-radius:12px;padding:10px;font-family:inherit;font-size:13px;resize:vertical;min-height:64px;color:#78350F">${esc(loadNote(today))}</textarea>
+      </div>
+
+      <div class="card fade" style="margin-bottom:14px;text-align:center;">
+        ${ringSVG(overallPct(),'#A78BFA','#F9A8D4',120)}
+        <div style="font-size:13px;color:var(--ink2);font-weight:700;margin-top:6px">总复习进度</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="card btn-tap" style="text-align:center" onclick="setTab('plan')">
+          <div style="font-size:26px">🗺️</div><div style="font-weight:800;margin-top:4px">学习计划</div>
+          <div style="font-size:11px;color:var(--ink2)">阶段→周→天</div>
+        </div>
+        <div class="card btn-tap" style="text-align:center" onclick="setTab('book')">
+          <div style="font-size:26px">📚</div><div style="font-weight:800;margin-top:4px">资料库</div>
+          <div style="font-size:11px;color:var(--ink2)">网课/教材/刷题</div>
+        </div>
+      </div>`;
+    }
+
+    // ============ 视图：计划 ============
+    function viewPlan(){
+      const today = todayStr();
+      let html = `<div style="font-size:13px;color:var(--ink2);font-weight:700;margin-bottom:12px">一阶段一模块 · 点进去看每周每天 💡</div>`;
+      phases.forEach(p=>{
+        const th=THEME[p.color];
+        const prog=phaseProgress(p);
+        html += `<div class="phase-card btn-tap fade" style="background:linear-gradient(135deg,${th.c1}22,${th.c2}22);border:1.5px solid ${th.c1}55;margin-bottom:12px"
+          onclick="go({type:'phase',id:'${p.id}',title:'${p.name}'})">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="emoji-badge" style="background:${th.soft}">${th.e}</div>
+            <div style="flex:1">
+              <div style="font-weight:800;font-size:16px">${p.name}</div>
+              <div style="font-size:11px;color:var(--ink2)">${fmtMD(p.start)} - ${fmtMD(p.end)} · ${p.weeks}周</div>
+            </div>
+            <div style="font-weight:800;color:var(--purple);font-size:14px">${prog}%</div>
+          </div>
+          <div class="bar" style="margin-top:10px"><i style="width:${prog}%;background:linear-gradient(90deg,${th.c1},${th.c2})"></i></div>
+        </div>`;
+      });
+      return html;
+    }
+    function phaseProgress(p){
+      let tot=0,done=0;
+      for(let i=0;i<p.weeklyPlans.length*7;i++){
+        const ds=addDays(p.start,i);
+        if(getDayInfo(ds)?.phase.id!==p.id) continue;
+        const t=getDailyTasks(ds); const d=loadDay(ds).size;
+        tot+=t.length; done+=d;
+      }
+      return tot===0?0:Math.round(done/tot*100);
+    }
+
+    function viewPhase(node){
+      const p=phases.find(x=>x.id===node.id);
+      const th=THEME[p.color];
+      let html=`<div class="card fade" style="margin-bottom:14px;background:linear-gradient(135deg,${th.c1}22,${th.c2}22)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="emoji-badge" style="background:${th.soft}">${th.e}</div>
+          <div><div style="font-weight:800;font-size:18px">${p.name}</div>
+          <div style="font-size:12px;color:var(--ink2)">${p.slogan}</div></div>
+        </div>
+        <div class="bar" style="margin-top:12px"><i style="width:${phaseProgress(p)}%;background:linear-gradient(90deg,${th.c1},${th.c2})"></i></div>
+      </div>`;
+      p.weeklyPlans.forEach((w,wi)=>{
+        const ws=addDays(p.start,wi*7);
+        const we=addDays(p.start,wi*7+6);
+        html+=`<div class="card btn-tap fade" style="margin-bottom:12px" onclick="go({type:'week',id:'${p.id}',wi:${wi},title:'${w.title}'})">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><div style="font-weight:800">${w.title}</div>
+            <div style="font-size:11px;color:var(--ink2)">${fmtMD(ws)} - ${fmtMD(we)}</div></div>
+            <div style="font-size:20px">›</div>
+          </div>
+        </div>`;
+      });
+      return html;
+    }
+
+    function viewWeek(node){
+      const p=phases.find(x=>x.id===node.id);
+      const w=p.weeklyPlans[node.wi];
+      let html=`<div style="font-size:13px;color:var(--ink2);font-weight:700;margin-bottom:12px">${p.name} · 点某天看当天任务</div>`;
+      for(let di=0; di<7; di++){
+        const ds=addDays(p.start, node.wi*7+di);
+        if(getDayInfo(ds)?.phase.id!==p.id) continue;
+        const t=getDailyTasks(ds); const d=loadDay(ds).size; const pc=Math.round(d/t.length*100);
+        const col = pc>=100?'#34D399' : pc>0?'#FBBF24' : '#D9D2F0';
+        html+=`<div class="card btn-tap fade" style="margin-bottom:10px;display:flex;align-items:center;gap:12px;padding:13px 15px"
+          onclick="go({type:'day',date:'${ds}',title:'${fmtFull(ds)}'})">
+          <div class="day-dot" style="background:${col}33;color:${col==='#D9D2F0'?'#8B85A8':col}">${parseDate(ds).getDate()}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">${w.tasks[di].length>20?w.tasks[di].slice(0,20)+'…':w.tasks[di]}</div>
+            <div style="font-size:11px;color:var(--ink2)">${d}/${t.length} 完成</div>
+          </div>
+          <div style="font-size:18px;color:var(--ink2)">›</div>
+        </div>`;
+      }
+      return html;
+    }
+
+    function viewDay(node){
+      const ds=node.date;
+      const info=getDayInfo(ds);
+      const t=getDailyTasks(ds);
+      const set=loadDay(ds);
+      const done=set.size; const pct=Math.round(done/t.length*100);
+      const th=info?THEME[info.phase.color]:THEME.sky;
+      const h=studyHours(ds);
+      let rows = t.map((task,i)=>{
+        const on=set.has(i);
+        return `<div class="task-row" onclick="toggleTask('${ds}',${i})">
+          <div class="check ${on?'on':''}">${on?'✓':''}</div>
+          <div style="flex:1;font-size:14px;font-weight:600;${on?'text-decoration:line-through;color:#BDB6D6':''}">${task}${i===0?' <span style="font-size:10px;background:#A78BFA22;color:#8B5CF6;padding:1px 7px;border-radius:8px;font-weight:700">核心</span>':''}</div>
+        </div>`;
+      }).join('');
+      return `
+      <div class="card fade" style="margin-bottom:14px;text-align:center;background:linear-gradient(135deg,${th.c1}22,${th.c2}22)">
+        ${ringSVG(pct, th.c1, th.c2, 110)}
+        <div style="font-size:12px;color:var(--ink2);font-weight:700;margin-top:4px">${info?info.phase.name+' · '+info.plan.title:'准备阶段'} · 第${info?info.di+1:1}天</div>
+        <div style="font-size:13px;color:#8B5CF6;font-weight:800;margin-top:4px">⏱️ 今日学习 ${h.toFixed(1)} 小时</div>
+      </div>
+      <div style="font-size:13px;color:var(--ink2);font-weight:700;margin-bottom:10px">今日任务 · 点一下打勾 ✓</div>
+      ${rows}
+      <div class="card fade" style="margin-bottom:14px;background:linear-gradient(135deg,#FEF3C7,#FDE68A);text-align:left">
+        <div style="font-weight:800;font-size:14px;color:#92400E;margin-bottom:8px">📝 今日便签 / 总结</div>
+        <textarea id="note-${ds}" oninput="onNoteInput('${ds}',this)" placeholder="写下今天的小结、薄弱点、明日计划…" style="width:100%;box-sizing:border-box;border:none;background:#FFFDF5;border-radius:12px;padding:10px;font-family:inherit;font-size:13px;resize:vertical;min-height:76px;color:#78350F">${esc(loadNote(ds))}</textarea>
+      </div>
+      <div style="text-align:center;margin-top:14px">
+        <button class="btn-tap" style="border:none;background:#fff;box-shadow:var(--shadow);color:var(--ink2);font-weight:700;padding:10px 20px;border-radius:14px;font-family:inherit" onclick="resetDay('${ds}')">↺ 重置当天</button>
+      </div>`;
+    }
+    function toggleTask(ds,i){
+      const set=loadDay(ds);
+      if(set.has(i)) set.delete(i); else set.add(i);
+      saveDay(ds,set);
+      render();
+    }
+    function resetDay(ds){ saveDay(ds,new Set()); render(); }
+
+    // ============ 每日便签 ============
+    function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function loadNote(ds){ return localStorage.getItem('gw_note_'+ds) || ''; }
+    function saveNote(ds, text){ localStorage.setItem('gw_note_'+ds, text); touch('gw_note_'+ds); }
+    function onNoteInput(ds, el){ saveNote(ds, el.value); }
+
+    // ============ 视图：资料 ============
+    function viewBook(){
+      let html=`<div style="font-size:13px;color:var(--ink2);font-weight:700;margin-bottom:12px">按模块整理的资料 📚</div>`;
+      phases.forEach(p=>{
+        const th=THEME[p.color];
+        const total=Object.values(p.resources).reduce((a,b)=>a+b.length,0);
+        html+=`<div class="phase-card btn-tap fade" style="background:linear-gradient(135deg,${th.c1}22,${th.c2}22);border:1.5px solid ${th.c1}55;margin-bottom:12px"
+          onclick="go({type:'res',id:'${p.id}',title:'${p.name} 资料'})">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="emoji-badge" style="background:${th.soft}">${th.e}</div>
+            <div style="flex:1"><div style="font-weight:800">${p.name}</div>
+            <div style="font-size:11px;color:var(--ink2)">${total} 项资料</div></div>
+            <div style="font-size:20px">›</div>
+          </div>
+        </div>`;
+      });
+      return html;
+    }
+    function viewRes(node){
+      const p=phases.find(x=>x.id===node.id);
+      const th=THEME[p.color];
+      let html=`<div style="font-size:13px;color:var(--ink2);font-weight:700;margin-bottom:12px">${p.name} · 复习资料</div>`;
+      for(const [cat,items] of Object.entries(p.resources)){
+        html+=`<div class="card fade" style="margin-bottom:12px">
+          <div class="pill" style="background:${th.soft};color:${th.c2};margin-bottom:8px">${cat}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${items.map(it=>`<span style="background:#F8F6FF;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:600">${it}</span>`).join('')}
+          </div>
+        </div>`;
+      }
+      return html;
+    }
+
+    // ============ 视图：我的（含学习日历） ============
+    function overallPct(){
+      const start=todayStr(); let tot=0,done=0;
+      for(let d=parseDate(start); d<=examDate; d=new Date(d.getTime()+DAY_MS)){
+        const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const t=getDailyTasks(ds); tot+=t.length; done+=loadDay(ds).size;
+      }
+      return tot===0?0:Math.round(done/tot*100);
+    }
+    function streakDays(){
+      let s=0;
+      for(let d=parseDate(todayStr()); d>=parseDate('2026-08-02'); d=new Date(d.getTime()-DAY_MS)){
+        const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if(loadDay(ds).size>0) s++; else break;
+      }
+      return s;
+    }
+    function studiedDays(){
+      const start=todayStr(); let n=0;
+      for(let d=parseDate(start); d<=examDate; d=new Date(d.getTime()+DAY_MS)){
+        const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if(loadDay(ds).size>0) n++;
+      }
+      return n;
+    }
+    function viewStudyCalendar(){
+      const start=todayStr();
+      let cells='';
+      let totalH=0;
+      for(let d=parseDate(start); d<=examDate; d=new Date(d.getTime()+DAY_MS)){
+        const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const h=studyHours(ds); totalH+=h;
+        const col=hourColor(h);
+        const txt = h>=2 ? '#fff' : 'var(--ink2)';
+        const label = h>0 ? h.toFixed(1)+'h' : '';
+        cells+=`<div title="${ds} 学习${h.toFixed(1)}小时" style="aspect-ratio:1;border-radius:10px;background:${col};display:flex;flex-direction:column;align-items:center;justify-content:center;color:${txt}">
+          <span style="font-weight:800;font-size:12px">${d.getDate()}</span>
+          <span style="font-size:8px;font-weight:700">${label}</span>
+        </div>`;
+      }
+      return `<div class="card fade" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div style="font-weight:800;font-size:15px">📅 学习日历</div>
+          <div style="font-size:12px;color:var(--purple);font-weight:800">累计 ${totalH.toFixed(1)}h</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink2);margin-bottom:10px">颜色越深 = 学得越久，点格子看不了但记录了每小时 💡</div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;max-height:320px;overflow-y:auto">${cells}</div>
+        <div style="display:flex;gap:4px;align-items:center;margin-top:10px;font-size:10px;color:var(--ink2);flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:4px;background:#EDE7FB;display:inline-block"></span>0h</span>
+          <span style="display:inline-flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:4px;background:#E9D5FF;display:inline-block"></span>&lt;1h</span>
+          <span style="display:inline-flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:4px;background:#C4B5FD;display:inline-block"></span>1-2h</span>
+          <span style="display:inline-flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:4px;background:#A78BFA;display:inline-block"></span>2-3h</span>
+          <span style="display:inline-flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:4px;background:#8B5CF6;display:inline-block"></span>&gt;3h</span>
+        </div>
+      </div>`;
+    }
+    function viewMe(){
+      const th=THEME[currentPhase().color];
+      let html=`
+      <div class="card fade" style="text-align:center;margin-bottom:14px;background:linear-gradient(135deg,${th.c1}22,${th.c2}22)">
+        ${ringSVG(overallPct(),'#A78BFA','#F9A8D4',130)}
+        <div style="font-weight:800;margin-top:4px">总复习进度</div>
+      </div>
+      ${syncCardHTML()}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="card" style="text-align:center"><div style="font-size:28px">🔥</div><div style="font-size:22px;font-weight:800;color:#F472B6">${streakDays()}</div><div style="font-size:11px;color:var(--ink2)">连续打卡(天)</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:28px">🌟</div><div style="font-size:22px;font-weight:800;color:#8B5CF6">${studiedDays()}</div><div style="font-size:11px;color:var(--ink2)">已学习(天)</div></div>
+      </div>
+      ${viewStudyCalendar()}
+      <div style="font-size:13px;color:var(--ink2);font-weight:700;margin-bottom:10px">各模块完成度</div>`;
+      phases.forEach(p=>{
+        const th2=THEME[p.color]; const pc=phaseProgress(p);
+        html+=`<div class="card fade" style="margin-bottom:10px;padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+            <div style="font-weight:700;font-size:14px">${th2.e} ${p.name}</div>
+            <div style="font-weight:800;color:${th2.c2}">${pc}%</div>
+          </div>
+          <div class="bar"><i style="width:${pc}%;background:linear-gradient(90deg,${th2.c1},${th2.c2})"></i></div>
+        </div>`;
+      });
+      return html;
+    }
+
+    // ============ 多端同步（GitHub 仓库作为数据中转） ============
+    function syncCfg(){ return safeParse('gw_sync', {}); }
+    function setSyncCfg(o){ localStorage.setItem('gw_sync', JSON.stringify(o)); }
+    // 记录某 key 最后修改时间，供按 key 合并；并触发自动同步
+    function touch(key){
+      const ts = safeParse('gw_ts', {}); ts[key] = Date.now();
+      localStorage.setItem('gw_ts', JSON.stringify(ts));
+      scheduleSync();
+    }
+    let syncTimer = null;
+    function scheduleSync(){
+      const c = syncCfg();
+      if(!c.pat || !c.auto) return;
+      if(syncTimer) clearTimeout(syncTimer);
+      syncTimer = setTimeout(syncNow, 3000);
+    }
+    function ghHeaders(pat){ return { 'Authorization':'Bearer '+pat, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json', 'X-GitHub-Api-Version':'2022-11-28' }; }
+    async function ghFetch(path, opts){
+      const c = syncCfg();
+      const r = await fetch('https://api.github.com'+path, Object.assign({headers: ghHeaders(c.pat)}, opts));
+      if(!r.ok) throw new Error(path+' '+r.status+' '+((await r.text())||'').slice(0,160));
+      if(r.status===204) return null;
+      return r.json();
+    }
+    // 把本机 gw* 数据导出为按 key 合并的 blob（计时器只同步已累计秒数，不传“正在计时”状态）
+    function exportLocal(){
+      const tsMap = safeParse('gw_ts', {});
+      const keys = {};
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k && k.indexOf('gw')===0 && k!=='gw_sync' && k!=='gw_ts'){
+          let v = localStorage.getItem(k);
+          if(k.indexOf('gw_timer_')===0){
+            try{ const o=JSON.parse(v); if(o.running){ o.accum=(o.accum||0)+((Date.now()-(o.startTs||Date.now()))/1000); o.running=false; o.startTs=0; v=JSON.stringify(o); } }catch(e){}
+          }
+          keys[k] = { v:v, ts: tsMap[k]||0 };
+        }
+      }
+      return { keys };
+    }
+    async function syncNow(){
+      const c = syncCfg();
+      if(!c.pat || !c.owner || !c.repo) return;
+      let remote = { keys:{} };
+      try{
+        const f = await ghFetch('/repos/'+c.owner+'/'+c.repo+'/contents/data/state.json', {method:'GET'});
+        if(f && f.content){ remote = JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g,''))))); remote._sha = f.sha; }
+      }catch(e){ /* 仓库里还没有 state.json，稍后创建 */ }
+      try{
+        const local = exportLocal();
+        const tsMap = safeParse('gw_ts', {});
+        const merged = {};
+        const allKeys = new Set([...Object.keys(remote.keys||{}), ...Object.keys(local.keys)]);
+        allKeys.forEach(k=>{
+          const rv=(remote.keys||{})[k], lv=local.keys[k];
+          if(rv && lv) merged[k] = (rv.ts>=lv.ts) ? rv : lv;
+          else merged[k] = rv || lv;
+        });
+        // 远端较新的 key 写回本机
+        Object.keys(remote.keys||{}).forEach(k=>{
+          const rv=(remote.keys||{})[k]; const lts=tsMap[k]||0;
+          if(rv.ts>lts) localStorage.setItem(k, rv.v);
+        });
+        const blob = { keys: merged, syncedAt: Date.now() };
+        const body = btoa(unescape(encodeURIComponent(JSON.stringify(blob))));
+        const path = '/repos/'+c.owner+'/'+c.repo+'/contents/data/state.json';
+        const bodyObj = { message:'sync '+new Date().toISOString(), content: body };
+        if(remote._sha) bodyObj.sha = remote._sha;
+        await ghFetch(path, { method:'PUT', body: JSON.stringify(bodyObj) });
+        c.lastSync = Date.now(); setSyncCfg(c);
+      }catch(e){ console.log('sync push error', e); c.lastErr = e.message; setSyncCfg(c); }
+    }
+    async function syncConnect(){
+      const pat = (document.getElementById('sync-pat')||{}).value;
+      let repo = ((document.getElementById('sync-repo')||{}).value||'').trim();
+      if(!pat){ alert('请填写 GitHub 个人访问令牌(PAT)'); return; }
+      try{
+        const me = await ghFetch('/user', {method:'GET'});
+        const owner = me.login;
+        if(!repo) repo = 'guokao-workbench';
+        try{ await ghFetch('/repos/'+owner+'/'+repo, {method:'GET'}); }
+        catch(e){ await ghFetch('/user/repos', {method:'POST', body: JSON.stringify({name:repo, private:true, auto_init:true})}); await new Promise(r=>setTimeout(r,1500)); }
+        const c = syncCfg(); c.pat=pat; c.owner=owner; c.repo=repo; c.auto=true; setSyncCfg(c);
+        await syncNow();
+        render();
+      }catch(e){ alert('连接失败：'+e.message); }
+    }
+    function toggleAuto(chk){ const c=syncCfg(); c.auto=chk; setSyncCfg(c); if(chk) syncNow(); }
+    function syncDisconnect(){ const c=syncCfg(); c.pat=''; c.owner=''; c.repo=''; setSyncCfg(c); render(); }
+    function syncNowClick(){ syncNow().then(render); }
+    function syncCardHTML(){
+      const c = syncCfg();
+      if(!c.pat){
+        return `<div class="card fade" style="margin-bottom:14px">
+          <div style="font-weight:800;font-size:15px;margin-bottom:4px">☁️ 多端同步</div>
+          <div style="font-size:11px;color:var(--ink2);margin-bottom:10px">用 GitHub 仓库在手机/电脑间同步数据（免费、永久）。需一个 GitHub 令牌。</div>
+          <input id="sync-pat" placeholder="粘贴 GitHub PAT（需 repo 权限）" style="width:100%;box-sizing:border-box;border:1.5px solid #E5DEFB;border-radius:12px;padding:10px;font-family:inherit;font-size:13px;margin-bottom:8px">
+          <input id="sync-repo" placeholder="仓库名（默认 guokao-workbench）" style="width:100%;box-sizing:border-box;border:1.5px solid #E5DEFB;border-radius:12px;padding:10px;font-family:inherit;font-size:13px;margin-bottom:10px">
+          <button class="btn-tap" onclick="syncConnect()" style="width:100%;border:none;background:linear-gradient(135deg,#A78BFA,#F9A8D4);color:#fff;font-weight:800;font-family:inherit;padding:11px;border-radius:14px">🔗 连接并同步</button>
+          <div style="font-size:10px;color:var(--ink2);margin-top:8px;line-height:1.5">令牌只存在你本机浏览器，仅用于读写你自己的仓库。创建：GitHub → Settings → Developer settings → Personal access tokens，勾 repo。</div>
+        </div>`;
+      }
+      const last = c.lastSync ? new Date(c.lastSync).toLocaleString('zh-CN') : '尚未同步';
+      return `<div class="card fade" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-weight:800;font-size:15px">☁️ 多端同步</div>
+          <label style="font-size:12px;color:var(--ink2);font-weight:700;display:flex;align-items:center;gap:6px">自动
+            <input type="checkbox" ${c.auto?'checked':''} onchange="toggleAuto(this.checked)" style="width:18px;height:18px;accent-color:#A78BFA">
+          </label>
+        </div>
+        <div style="font-size:11px;color:var(--ink2);margin-bottom:10px">仓库 <b>${c.owner}/${c.repo}</b></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-tap" onclick="syncNowClick()" style="flex:1;border:none;background:linear-gradient(135deg,#A78BFA,#F9A8D4);color:#fff;font-weight:800;font-family:inherit;padding:11px;border-radius:14px">🔄 立即同步</button>
+          <button class="btn-tap" onclick="syncDisconnect()" style="border:none;background:#fff;color:var(--ink2);font-weight:700;font-family:inherit;padding:11px 16px;border-radius:14px;box-shadow:var(--shadow)">断开</button>
+        </div>
+        <div style="font-size:11px;color:var(--ink2);margin-top:8px">上次同步：${last}</div>
+      </div>`;
+    }
+
+    // ============ 启动 ============
+    render();
+    (function(){ const _sc = syncCfg(); if(_sc.pat && _sc.auto){ syncNow(); } })();
+  </script>
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(e){console.log('SW注册失败',e);});});}
+</script>
+</body>
+</html>
